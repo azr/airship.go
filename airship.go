@@ -9,12 +9,12 @@ package airship
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"http"
+	"net/http"
 	"io"
 	"io/ioutil"
-	"json"
-	"os"
+	"encoding/json"
 )
 
 var UAClient = &http.Client{}
@@ -47,7 +47,7 @@ type App struct {
 	ServerUrl string
 }
 
-func (app *App) deliverPayload(url string, payload io.Reader) os.Error {
+func (app *App) deliverPayload(url string, payload io.Reader) error {
 	if (app.ServerUrl == "") {
 		app.ServerUrl = "https://go.urbanairship.com"
 	}
@@ -63,13 +63,13 @@ func (app *App) deliverPayload(url string, payload io.Reader) os.Error {
 	if resp.StatusCode != 200 {
 		respString, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
-		return os.NewError(fmt.Sprintf("Hit a non-200 response from UA with a status code of %s: %s\n", resp.StatusCode, respString))
+		return errors.New(fmt.Sprintf("Hit a non-200 response from UA with a status code of %s: %s\n", resp.StatusCode, respString))
 	}
 	return nil
 }
 
 // Takes data, marshals it, and sends it along to the broadcast API endpoint.
-func (app *App) Broadcast(data PushData) os.Error {
+func (app *App) Broadcast(data PushData) error {
 	json_data, err := json.Marshal(data); if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (app *App) Broadcast(data PushData) os.Error {
 }
 
 // Takes data, marshals it, and sends it along to the push API endpoint.
-func (app *App) Push(data PushData) os.Error {
+func (app *App) Push(data PushData) error {
 	json_data, err := json.Marshal(data); if err != nil {
 		return err
 	}

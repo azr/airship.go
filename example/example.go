@@ -1,7 +1,7 @@
 package main
 
 import (
-	"airship.go"
+	"github.com/urbanairship/airship.go"
 	"log"
 )
 
