@@ -100,3 +100,13 @@ func (app *App) Push(data PushData) error {
 	payload := bytes.NewBuffer(json_data)
 	return app.deliverPayload("/api/push/", payload)
 }
+
+
+// Takes data, marshals it, and sends it along to the segments push API endpoint.
+func (app *App) PushSegments(data SegmentsPushData) error {
+	json_data, err := json.Marshal(data); if err != nil {
+		return err
+	}
+	payload := bytes.NewBuffer(json_data)
+	return app.deliverPayload("/api/push/segments", payload)
+}
