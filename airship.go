@@ -40,6 +40,21 @@ type PushData struct {
 	Aliases []string `json:"aliases,omitempty"`
 }
 
+type IOS struct {
+	APS APS `json:"aps,omitempty"`
+}
+
+
+type SegmentsPushData struct {
+	IOS IOS `json:"ios,omitempty"`
+	Android Android `json:"android,omitempty"`
+	DeviceTokens []string `json:"device_tokens,omitempty"`
+	Apids []string `json:"apids,omitempty"`
+	Tags []string `json:"tags,omitempty"`
+	Aliases []string `json:"aliases,omitempty"`
+	Segments []string `json:"segments,omitempty"`
+}
+
 // App represents an Urban Airship application.
 type App struct {
 	Key string
