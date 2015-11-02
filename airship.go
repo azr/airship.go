@@ -1,112 +1,102 @@
-// Copyright 2011 Urban Airship, Inc. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-
 // Package airship allows you to easily communicate with the Urban Airship
 // ( http://urbanairship.com/ ).
 package airship
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
-	"net/http"
 	"io"
 	"io/ioutil"
-	"encoding/json"
+	"net/http"
 )
 
 var UAClient = &http.Client{}
 
-// APS represents an iOS payload - alert, sound, badge.
-type APS struct {
-	Alert string `json:"alert,omitempty"`
-	Sound string `json:"sound,omitempty"`
-	Badge int `json:"badge,omitempty"`
+// App represents an Urban Airship application.
+type App struct {
+	Key          string
+	MasterSecret string
+	ServerUrl    string
 }
 
-type Android struct {
-	Alert string `json:"alert,omitempty"`
-}
-
-// PushData is a struct that represents a payload.
+//A Push payload.
 type PushData struct {
-	APS APS `json:"aps,omitempty"`
-	Android Android `json:"android,omitempty"`
-	DeviceTokens []string `json:"device_tokens,omitempty"`
-	Apids []string `json:"apids,omitempty"`
-	Tags []string `json:"tags,omitempty"`
-	Aliases []string `json:"aliases,omitempty"`
+	Audience     interface{}  `json:"audience,omitempty"`
+	Notification Notification `json:"notification"`
+	DeviceTypes  string       `json:"device_types,omitempty"`
+}
+type Notification struct {
+	Alert      string `json:"alert,omitempty"`      // set default alert msg
+	IOS        *IOS   `json:"ios,omitempty"`        // allows to override alert msg and/or add specifics in IOS, see IOS
+	Android    *Alert `json:"android,omitempty"`    // allows to override alert msg in Android
+	Amazon     *Alert `json:"amazon,omitempty"`     // allows to override alert msg in Amazon
+	Blackberry *Alert `json:"blackberry,omitempty"` // allows to override alert msg in Blackberry
+	Mpns       *Alert `json:"mpns,omitempty"`       // allows to override alert msg in Windows Phone
+	Wns        *Alert `json:"wns,omitempty"`        // allows to override alert msg in Windows
+}
+
+//Represents a simple audience setting
+type Audience struct {
+	IOS          string `json:"device_token,omitempty"` //the unique identifier used to target an iOS device
+	Android      string `json:"apdi,omitempty"`         //the unique identifier used to target an Android device
+	WindowsPhone string `json:"mpns,omitempty"`         //the unique identifier used to target a Windows Phone device
+	Windows      string `json:"wns,omitempty"`          //the unique identifier used to target a Windows device
+	Blackberry   string `json:"device_pin,omitempty"`   //the unique identifier used to target a Blackberry device
+}
+
+//Represents a base alert message
+type Alert struct {
+	Alert string `json:"alert,omitempty"`
 }
 
 type IOS struct {
-	APS APS `json:"aps,omitempty"`
-}
-
-
-type SegmentsPushData struct {
-	IOS IOS `json:"ios,omitempty"`
-	Android Android `json:"android,omitempty"`
-	DeviceTokens []string `json:"device_tokens,omitempty"`
-	Apids []string `json:"apids,omitempty"`
-	Tags []string `json:"tags,omitempty"`
-	Aliases []string `json:"aliases,omitempty"`
-	Segments []string `json:"segments,omitempty"`
-}
-
-// App represents an Urban Airship application.
-type App struct {
-	Key string
-	MasterSecret string
-	ServerUrl string
+	Alert string `json:"alert,omitempty"`
+	Sound string `json:"sound,omitempty"`
+	Badge string `json:"badge,omitempty"`
 }
 
 func (app *App) deliverPayload(url string, payload io.Reader) error {
-	if (app.ServerUrl == "") {
+	if app.ServerUrl == "" {
 		app.ServerUrl = "https://go.urbanairship.com"
 	}
 	apiEndpoint := app.ServerUrl + url
-	req, err := http.NewRequest("POST", apiEndpoint, payload); if err != nil {
+	req, err := http.NewRequest("POST", apiEndpoint, payload)
+	if err != nil {
 		return err
 	}
 	req.SetBasicAuth(app.Key, app.MasterSecret)
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := UAClient.Do(req); if err != nil {
+	req.Header.Set("Accept", "application/vnd.urbanairship+json; version=3;")
+	resp, err := UAClient.Do(req)
+	if err != nil {
 		return err
 	}
 	if resp.StatusCode != 200 {
 		respString, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
-		return errors.New(fmt.Sprintf("Hit a non-200 response from UA with a status code of %s: %s\n", resp.StatusCode, respString))
+		return fmt.Errorf("Hit a non-200 response from UA with a status code of %d: %s\n", resp.StatusCode, respString)
 	}
 	return nil
 }
 
 // Takes data, marshals it, and sends it along to the broadcast API endpoint.
 func (app *App) Broadcast(data PushData) error {
-	json_data, err := json.Marshal(data); if err != nil {
+	json_data, err := json.Marshal(data)
+	if err != nil {
 		return err
 	}
 	payload := bytes.NewBuffer(json_data)
-	return app.deliverPayload("/api/push/broadcast/", payload)
+	return app.deliverPayload("/api/push/broadcast", payload)
 }
 
 // Takes data, marshals it, and sends it along to the push API endpoint.
 func (app *App) Push(data PushData) error {
-	json_data, err := json.Marshal(data); if err != nil {
+	json_data, err := json.Marshal(data)
+	if err != nil {
 		return err
 	}
+	fmt.Println("data: ", string(json_data))
 	payload := bytes.NewBuffer(json_data)
-	return app.deliverPayload("/api/push/", payload)
-}
-
-
-// Takes data, marshals it, and sends it along to the segments push API endpoint.
-func (app *App) PushSegments(data SegmentsPushData) error {
-	json_data, err := json.Marshal(data); if err != nil {
-		return err
-	}
-	payload := bytes.NewBuffer(json_data)
-	return app.deliverPayload("/api/push/segments", payload)
+	return app.deliverPayload("/api/push", payload)
 }

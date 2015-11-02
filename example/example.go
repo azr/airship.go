@@ -1,19 +1,32 @@
 package main
 
 import (
-	"github.com/urbanairship/airship.go"
 	"log"
+
+	"github.com/azr/airship.go"
 )
 
 const AppKey = "YOUR_APP_KEY"
 const AppMasterSecret = "YOUR_APP_MASTER_SECRET"
-const DeviceToken = "YOUR_DEVICE_TOKEN"
+const IOSDeviceToken = "YOUR_DEVICE_TOKEN"
 
 func main() {
 	app := airship.App{Key: AppKey, MasterSecret: AppMasterSecret}
-	aps_data := airship.APS{Alert: "hi!"}
-	data := airship.PushData{APS: aps_data, DeviceTokens: []string{DeviceToken}}
-	err := app.Push(data); if err != nil {
+	data := airship.PushData{
+		Audience: airship.Audience{
+			IOS: IOSDeviceToken,
+		},
+		Notification: airship.Notification{
+			Alert: "Yo man !",
+			IOS: &airship.IOS{
+				Alert: "Yo man !",
+				Badge: "+1",
+			},
+		},
+		DeviceTypes: "all",
+	}
+	err := app.Push(data)
+	if err != nil {
 		log.Print(err)
 	}
 }
