@@ -56,7 +56,7 @@ type IOS struct {
 	Badge string `json:"badge,omitempty"`
 }
 
-func (app *App) deliverPayload(url string, payload io.Reader) error {
+func (app *App) deliverPayload(url string, payload io.Reader, c *http.Client) error {
 	if app.ServerUrl == "" {
 		app.ServerUrl = "https://go.urbanairship.com"
 	}
@@ -68,7 +68,7 @@ func (app *App) deliverPayload(url string, payload io.Reader) error {
 	req.SetBasicAuth(app.Key, app.MasterSecret)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/vnd.urbanairship+json; version=3;")
-	resp, err := UAClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
@@ -82,21 +82,33 @@ func (app *App) deliverPayload(url string, payload io.Reader) error {
 
 // Takes data, marshals it, and sends it along to the broadcast API endpoint.
 func (app *App) Broadcast(data PushData) error {
+	return app.BroadcastWithClient(data, UAClient)
+}
+
+//Same as Broadcast but you can pass your http client.
+//It's pretty convenient in appengine or when behind a secured network.
+func (app *App) BroadcastWithClient(data PushData, c *http.Client) error {
 	json_data, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	payload := bytes.NewBuffer(json_data)
-	return app.deliverPayload("/api/push/broadcast", payload)
+	return app.deliverPayload("/api/push/broadcast", payload, c)
 }
 
 // Takes data, marshals it, and sends it along to the push API endpoint.
 func (app *App) Push(data PushData) error {
+	return app.PushWithClient(data, UAClient)
+}
+
+//Same as Push but you can pass your http client.
+//It's pretty convenient in appengine or when behind a secured network.
+func (app *App) PushWithClient(data PushData, c *http.Client) error {
 	json_data, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	fmt.Println("data: ", string(json_data))
 	payload := bytes.NewBuffer(json_data)
-	return app.deliverPayload("/api/push", payload)
+	return app.deliverPayload("/api/push", payload, c)
 }
