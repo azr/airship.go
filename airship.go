@@ -72,7 +72,7 @@ func (app *App) deliverPayload(url string, payload io.Reader, c *http.Client) er
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode/100 != 2 {
 		respString, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		return fmt.Errorf("Hit a non-200 response from UA with a status code of %d: %s\n", resp.StatusCode, respString)
