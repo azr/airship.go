@@ -39,7 +39,7 @@ type Notification struct {
 //Represents a simple audience setting
 type Audience struct {
 	IOS          string `json:"device_token,omitempty"` //the unique identifier used to target an iOS device
-	Android      string `json:"apdi,omitempty"`         //the unique identifier used to target an Android device
+	Android      string `json:"apid,omitempty"`         //the unique identifier used to target an Android device
 	WindowsPhone string `json:"mpns,omitempty"`         //the unique identifier used to target a Windows Phone device
 	Windows      string `json:"wns,omitempty"`          //the unique identifier used to target a Windows device
 	Blackberry   string `json:"device_pin,omitempty"`   //the unique identifier used to target a Blackberry device
